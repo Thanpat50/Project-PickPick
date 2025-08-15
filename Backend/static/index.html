@@ -62,20 +62,20 @@
 
 .bot-question-box {
   display: flex;
-  align-items: center;      /* เดิมเป็น flex-start ให้เปลี่ยนเป็น center */
+  align-items: center;      
   gap: 14px;
   border-radius: 18px;
   padding: 12px 18px;
   margin-bottom: 24px;
   max-width: 90vw;
-  min-height: 96px;         /* ให้เท่ากับความสูงของ .bot-avatar */
+  min-height: 96px;      
   width: fit-content;
 }
 
 .bot-avatar {
-  width: 96px;                  /* ขยายเฉพาะรูป */
+  width: 96px;             
   height: 96px;
-  flex-shrink: 0;               /* ไม่ให้รูปย่อ */
+  flex-shrink: 0;           
   object-fit: contain;
   margin-top: 2px;
   transition: transform 0.3s;
@@ -96,21 +96,21 @@
   position: relative;
   height: 0;
   z-index: 1;
-  /* ไม่มี margin-top/mb */
+
 }
 
 .mascot-case {
   position: absolute;
   left: 50%;
   top: 0;
-  transform: translate(-50%, -55%); /* โผล่ขึ้นมาครึ่งตัว */
+  transform: translate(-50%, -55%); 
   width: 580px;
   max-width: 95vw;
   z-index: 1;
   pointer-events: none;
   user-select: none;
   object-fit: contain;
-  clip-path: inset(0 0 45% 0); /* โผล่แค่ครึ่งตัวบน */
+  clip-path: inset(0 0 45% 0); 
   filter: drop-shadow(0 8px 32px #0003);
   background: none;
   margin-top: 150px;
@@ -164,26 +164,26 @@
   gap: 8px;
   position: relative;
   width: 100%;
-  min-height: 60px; /* ปรับตามความสูงของ .case-card/.option-btn */
+  min-height: 60px; 
   height: 100%;
 }
 
 .arrow-btn {
   background: transparent;
   border: none;
-  padding: 12px 20px;        /* ใหญ่ขึ้น */
-  font-size: 1.25rem;        /* ขนาดตัวอักษรใหญ่ขึ้น */
+  padding: 12px 20px;       
+  font-size: 1.25rem;       
   color: #007aff;
   font-weight: 500;
   font-family: 'Kanit', 'Segoe UI', 'San Francisco', Arial, sans-serif;
   cursor: pointer;
   transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
-  border-radius: 12px;       /* มุมมนดูนุ่มนวล */
+  border-radius: 12px;      
   user-select: none;
 }
 
 .arrow-btn:hover {
-  background: rgba(0, 122, 255, 0.08);  /* ฟ้าอ่อนแบบโปร่ง */
+  background: rgba(0, 122, 255, 0.08); 
   color: #005fcc;
 }
 
@@ -208,18 +208,18 @@
   padding: 8px 0;
   width: 80vw;
   max-width: 600px;
-  min-height: 60px; /* ให้เท่ากับ .case-list-scroll-wrapper */
+  min-height: 60px; 
   align-items: center;
 }
 
 
 
-/* ปุ่มเริ่มใหม่ และ แชร์ */
+
 #restartBtn, #shareBtn {
   margin-top: 25px;
   width: auto;
   padding: 12px 30px;
-  background: #19c37d;           /* สีเขียวมินิมอล */
+  background: #19c37d;       
   color: #fff;
   font-weight: 600;
   border-radius: 10px;
@@ -310,13 +310,11 @@
 </div>
   </div>
 
-  <!-- แสดงคำถาม -->
-<!-- แสดงคำถาม -->
-<!-- มาสคอต -->
 
 
 
-<!-- เปลี่ยนใน #question-area ใส่ div หุ้มปุ่มแชร์และปุ่มเริ่มใหม่ -->
+
+
 <div id="question-area">
   <div id="bot-question-box" class="bot-question-box">
   <img src="static/img/Mar.png" alt="Bot" class="bot-avatar">
@@ -340,7 +338,6 @@
 
 
 
-  <!-- Progress bar -->
 <div id="progress-container">
   <div id="progress-bar">
     <div class="bubbles"></div>
@@ -355,7 +352,7 @@
   let questionQueue = [];
   let currentQuestion = null;
   let totalQuestionsAsked = 0;
-  let maxQuestions = 1; // default
+  let maxQuestions = 1;
   let mascotBubbleInterval = null;
 
   const caseDescriptions = {
@@ -503,7 +500,7 @@ showQuestion(data.first_question);
         }
       }
       if (opt.options) {
-        // เผื่อมี options ซ้อนใน option (บาง flow)
+
         for (const sub of opt.options) {
           if (sub.next_question) count += countQuestions(sub.next_question);
         }
@@ -535,7 +532,6 @@ showQuestion(data.first_question);
 
   stopMascotBubble();
 
-  // ถ้ามี firstQuestion ให้ set maxQuestions จากการนับจริง
   if (firstQuestion) {
     maxQuestions = countQuestions(firstQuestion);
   } else {
@@ -593,11 +589,11 @@ document.getElementById('bot-question-box').style.display = 'flex';
     optionsDiv.appendChild(btn);
   });
 
-  // แสดงปุ่มย้อนกลับถ้ามีประวัติ
+
 
 }
 
-// ...existing code...
+
  async function selectOption(idx) {
   const res = await fetch('/next_question', {
     method: 'POST',
@@ -617,7 +613,7 @@ document.getElementById('bot-question-box').style.display = 'flex';
 
     const resultDiv = document.getElementById('result');
     const shareBtn = document.getElementById('shareBtn');
-    document.getElementById('bot-question-box').style.display = 'none'; // ซ่อนกล่องบอทเมื่อสรุปผล
+    document.getElementById('bot-question-box').style.display = 'none';
 
     if (data.result?.length) {
 let resultTitle = `<div class="result-title">ผลลัพธ์สำหรับคุณ</div>`;
@@ -639,7 +635,7 @@ resultDiv.innerHTML = resultTitle + data.result.map(item => `
     document.getElementById('progress-container').style.display = 'none';
   } else if (data.next_questions?.length > 0) {
     questionQueue = data.next_questions.concat(questionQueue);
-    // maxQuestions += data.next_questions.length;  // <-- ลบบรรทัดนี้ออก
+
     const nextQ = questionQueue.shift();
     showQuestion(nextQ);
   } else if (questionQueue.length > 0) {
@@ -655,7 +651,7 @@ resultDiv.innerHTML = resultTitle + data.result.map(item => `
 }
 
   function restart() {
-    // เริ่มต้นกลับไปเลือกเคสใหม่
+
     currentCase = null;
     currentBranchIndex = null;
     questionQueue = [];
@@ -699,7 +695,7 @@ resultDiv.innerHTML = resultTitle + data.result.map(item => `
 
 function updateProgress(count) {
   const bar = document.getElementById('progress-bar');
-  // ใช้ maxQuestions ที่กำหนดไว้
+
   let percent = maxQuestions > 0 ? Math.min(100, (count / maxQuestions) * 100) : 0;
   bar.style.width = percent + '%';
 }
@@ -723,7 +719,7 @@ function updateProgress(count) {
     setTimeout(() => {
       overlay.style.display = "none";
     }, 1000);
-  }, 4000); // ระยะเวลาโชว์ intro
+  }, 4000); 
 });
 
 
@@ -743,12 +739,12 @@ function updateProgress(count) {
 
       container.appendChild(firework);
 
-      // เมื่อพุ่งเสร็จ ให้แตก
+
       setTimeout(() => {
         firework.remove();
         createExplosion(x, window.innerHeight * 0.4 + Math.random() * 0.3 * window.innerHeight);
       }, 800);
-    }, i * 300); // ยิงพลุห่างกันทุก 300ms
+    }, i * 300); 
   }
 }
 
@@ -796,20 +792,20 @@ function showMascotBubble(msg) {
   mascotBubbleText.textContent = msg;
   mascotBubble.style.display = 'block';
   mascotBubble.classList.add('active');
-  // ซ่อนหลัง 5.5 วิ (แต่ไม่ปิด display ทันที)
+
   mascotBubbleTimeout = setTimeout(() => {
     mascotBubble.classList.remove('active');
     mascotBubbleTimeout = setTimeout(() => {
       mascotBubble.style.display = 'none';
-      // เรียกวนรอบใหม่หลังปิด bubble แล้ว
+
       mascotMsgIndex = (mascotMsgIndex + 1) % mascotMessages.length;
       showMascotBubble(mascotMessages[mascotMsgIndex]);
-    }, 2000); // fade out 0.5 วิ
-  }, 5000); // แสดงข้อความ 5.5 วิ
+    }, 2000); 
+  }, 5000); 
 }
 
 function startMascotBubble() {
-  stopMascotBubble(); // ป้องกันซ้อน
+  stopMascotBubble(); 
   mascotMsgIndex = 0;
   showMascotBubble(mascotMessages[mascotMsgIndex]);
 }
@@ -825,7 +821,7 @@ function stopMascotBubble() {
 
 function scrollCaseList(direction) {
   const list = document.getElementById('caseList');
-  const scrollAmount = 120; // px ต่อครั้ง
+  const scrollAmount = 120; 
   list.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
 }
 
