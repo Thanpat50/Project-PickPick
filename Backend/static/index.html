@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบแนะนำสายการเรียน</title>
+  <link rel="stylesheet" href="static/style.css">
+  <link rel="stylesheet" href="static/Display.css">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit&display=swap" rel="stylesheet" />
+  <style>
+   #fireworks-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+    overflow: hidden;
+  }
+
+  .firework {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background-color: white;
+    border-radius: 50%;
+    animation: shootUp 0.8s ease-out forwards;
+  }
+
+  .particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    opacity: 0.9;
+    animation: explode 1.5s ease-out forwards;
+  }
+
+  @keyframes shootUp {
+    0% {
+      bottom: 0;
+      opacity: 1;
+    }
+    100% {
+      bottom: 60%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes explode {
+    0% {
+      transform: translate(0, 0);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(var(--dx), var(--dy));
+      opacity: 0;
+    }
+  }
+
+
+.bot-question-box {
+  display: flex;
+  align-items: center;      /* เดิมเป็น flex-start ให้เปลี่ยนเป็น center */
+  gap: 14px;
+  border-radius: 18px;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+  max-width: 90vw;
+  min-height: 96px;         /* ให้เท่ากับความสูงของ .bot-avatar */
+  width: fit-content;
+}
+
+.bot-avatar {
+  width: 96px;                  /* ขยายเฉพาะรูป */
+  height: 96px;
+  flex-shrink: 0;               /* ไม่ให้รูปย่อ */
+  object-fit: contain;
+  margin-top: 2px;
+  transition: transform 0.3s;
+}
+@keyframes mascot-spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+.bot-avatar.typing {
+  animation: mascot-spin 1s linear infinite;
+}
+
+.mascot-case-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  height: 0;
+  z-index: 1;
+  /* ไม่มี margin-top/mb */
+}
+
+.mascot-case {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -55%); /* โผล่ขึ้นมาครึ่งตัว */
+  width: 580px;
+  max-width: 95vw;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  object-fit: contain;
+  clip-path: inset(0 0 45% 0); /* โผล่แค่ครึ่งตัวบน */
+  filter: drop-shadow(0 8px 32px #0003);
+  background: none;
+  margin-top: 150px;
+}
+
+
+.mascot-bubble {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%) scale(0.85);
+  background: #fff;
+  color: #222;
+  border-radius: 18px;
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 12px #b2ebf255;
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(.4,2,.6,1), transform 0.35s cubic-bezier(.4,2,.6,1);
+}
+.mascot-bubble.active {
+  opacity: 1;
+  transform: translateX(-50%) scale(1.05);
+}
+.mascot-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  border-width: 8px 10px 0 10px;
+  border-style: solid;
+  border-color: #fff transparent transparent transparent;
+  filter: drop-shadow(0 2px 4px #b2ebf222);
+}
+
+@keyframes bubble-pop {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.8);}
+  70% { opacity: 1; transform: translateX(-50%) scale(1.05);}
+  100% { opacity: 1; transform: translateX(-50%) scale(1);}
+}
+
+
+.case-list-scroll-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  width: 100%;
+  min-height: 60px; /* ปรับตามความสูงของ .case-card/.option-btn */
+  height: 100%;
+}
+
+.arrow-btn {
+  background: transparent;
+  border: none;
+  padding: 12px 20px;        /* ใหญ่ขึ้น */
+  font-size: 1.25rem;        /* ขนาดตัวอักษรใหญ่ขึ้น */
+  color: #007aff;
+  font-weight: 500;
+  font-family: 'Kanit', 'Segoe UI', 'San Francisco', Arial, sans-serif;
+  cursor: pointer;
+  transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
+  border-radius: 12px;       /* มุมมนดูนุ่มนวล */
+  user-select: none;
+}
+
+.arrow-btn:hover {
+  background: rgba(0, 122, 255, 0.08);  /* ฟ้าอ่อนแบบโปร่ง */
+  color: #005fcc;
+}
+
+.arrow-btn:active {
+  background: rgba(0, 122, 255, 0.15);
+  color: #004bb5;
+}
+
+.arrow-icon {
+  font-size: 1.4rem;
+  margin: 0 6px;
+  vertical-align: middle;
+}
+
+
+
+.scrollable-list {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  scroll-behavior: smooth;
+  padding: 8px 0;
+  width: 80vw;
+  max-width: 600px;
+  min-height: 60px; /* ให้เท่ากับ .case-list-scroll-wrapper */
+  align-items: center;
+}
+
+
+
+/* ปุ่มเริ่มใหม่ และ แชร์ */
+#restartBtn, #shareBtn {
+  margin-top: 25px;
+  width: auto;
+  padding: 12px 30px;
+  background: #19c37d;           /* สีเขียวมินิมอล */
+  color: #fff;
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px #19c37d22;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  user-select: none;
+  cursor: pointer;
+  border: none;
+  align-self: center;
+  display: none;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+#restartBtn:hover, #shareBtn:hover {
+  background: #13a86b;
+  color: #fff;
+  box-shadow: 0 4px 16px #19c37d33;
+}
+
+#restartBtn:active, #shareBtn:active {
+  background: #0e7c47;
+  color: #eaf2f8;
+  transform: scale(0.97);
+}
+  </style>
+</head>
+<body>
+
+<div id="intro-overlay">
+  <div class="intro-content">
+    <h1 class="intro-title animated-title">
+      <span>ยินดีต้อนรับสู่</span><br>
+      <span>ระบบแนะนำสายการเรียน</span>
+    </h1>
+    <img src="static/img/Robottic.png" alt="Robot" class="mascot-img" />
+  </div>
+</div>
+
+
+<div id="fireworks-container"></div>
+
+
+
+  <h1>ระบบแนะนำสายการเรียน</h1>
+
+
+  
+
+  <!-- เลือกเคส -->
+
+
+<div class="mascot-case-wrapper">
+  <img src="static/img/Robottic.png" alt="Mascot" class="mascot-case">
+  <div id="mascot-bubble" class="mascot-bubble" style="display:none;">
+    <span id="mascot-bubble-text"></span>
+  </div>
+</div>
+<div style="position:relative; width:100%; display:flex; flex-direction:column; align-items:center;">
+  <div id="case-selection">
+    <!-- ... -->
+    <div class="case-list-scroll-wrapper">
+  <button class="arrow-btn left" onclick="scrollCaseList(-1)" aria-label="เลื่อนซ้าย">
+    <span class="arrow-icon">&lt;</span>
+  </button>
+  <div id="caseList" class="scrollable-list"></div>
+  <button class="arrow-btn right" onclick="scrollCaseList(1)" aria-label="เลื่อนขว">
+    <span class="arrow-icon">&gt;</span>
+  </button>
+</div>
+    <div id="caseDescription">กรุณาเลือกความชอบเพื่อดูคำแนะนำ</div>
+    <button id="caseNextBtn" onclick="startCase()">เริ่ม</button>
+  </div>
+  </div>
+</div>
+
+  <!-- เลือกหัวข้อย่อย -->
+  <div id="branch-selection">
+    <h2>เลือกหัวข้อย่อย</h2>
+    <div class="case-list-scroll-wrapper">
+  <button class="arrow-btn left" onclick="scrollBranchList(-1)" aria-label="เลื่อนซ้าย">
+    <span class="arrow-icon">&lt;</span>
+  </button>
+  <div id="branchList" class="scrollable-list"></div>
+  <button class="arrow-btn right" onclick="scrollBranchList(1)" aria-label="เลื่อนขว">
+    <span class="arrow-icon">&gt;</span>
+  </button>
+</div>
+  </div>
+
+  <!-- แสดงคำถาม -->
+<!-- แสดงคำถาม -->
+<!-- มาสคอต -->
+
+
+
+<!-- เปลี่ยนใน #question-area ใส่ div หุ้มปุ่มแชร์และปุ่มเริ่มใหม่ -->
+<div id="question-area">
+  <div id="bot-question-box" class="bot-question-box">
+  <img src="static/img/Mar.png" alt="Bot" class="bot-avatar">
+  <span id="question-text"></span>
+</div>
+  <div id="options"></div>
+  <div id="note" style="display: none;"></div>
+  <div id="result" style="display: none;"></div>
+
+  
+  <!-- กลุ่มปุ่มแสดงผลลัพธ์ -->
+  <div id="action-buttons" style="display:none; margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+    <button id="restartBtn" onclick="restart()">เริ่มใหม่</button>
+    <button id="shareBtn" onclick="shareResult()">แชร์ผลลัพธ์</button>
+
+
+  </div>
+
+
+</div>
+
+
+
+  <!-- Progress bar -->
+<div id="progress-container">
+  <div id="progress-bar">
+    <div class="bubbles"></div>
+  </div>
+</div>
+
+
+<script>
+  let currentCase = null;
+  let casesData = {};
+  let currentBranchIndex = null;
+  let questionQueue = [];
+  let currentQuestion = null;
+  let totalQuestionsAsked = 0;
+  let maxQuestions = 1; // default
+  let mascotBubbleInterval = null;
+
+  const caseDescriptions = {
+    "ด้านวิทยาศาสตร์": "หากคุณชอบเรียนรู้เกี่ยวกับโลกธรรมชาติ การทดลอง และเทคโนโลยี นี่คือทางเลือกที่ดีสำหรับคุณ",
+"ด้านภาษา": "หากคุณชอบการสื่อสาร อ่านเขียน และเข้าใจวัฒนธรรม นี่คือเส้นทางที่เหมาะกับคุณ",
+"ด้านธุรกิจ": "ถ้าคุณสนใจเรื่องการบริหาร การตลาด และการเป็นผู้นำ นี่จะเป็นทางเลือกที่น่าสนใจ",
+"ด้านสุขภาพ": "หากคุณมีใจรักในการดูแลและรักษาผู้อื่น สายนี้เหมาะกับคุณ",
+"ด้านเทคโนโลยี": "ถ้าคุณชอบคอมพิวเตอร์ การเขียนโปรแกรม และระบบสารสนเทศ นี่คือทางเลือกที่โดดเด่น",
+"ด้านการคำนวณ": "ถ้าคุณชอบการคิดวิเคราะห์ แก้ปัญหาด้วยตัวเลข และคำนวณอย่างเป็นระบบ ด้านนี้เหมาะกับคุณ",
+"ด้านกฎหมายและสังคม": "หากคุณสนใจเรื่องสิทธิ ความยุติธรรม และการช่วยเหลือสังคม นี่คือทางเลือกที่น่าสนใจ",
+"ด้านศิลปะ ออกแบบ ดนตรี การแสดง": "ถ้าคุณรักการสร้างสรรค์งานศิลปะ ดีไซน์ หรือการแสดงออกผ่านเสียงและท่าทาง สายนี้จะตอบโจทย์คุณ",
+"ด้านการสอนและพัฒนาเด็ก / คน": "หากคุณมีใจรักในการสอน การพัฒนาศักยภาพเด็กและคน นี่คือเส้นทางที่เหมาะสม",
+"ด้านการบริการ อาสา และมนุษยสัมพันธ์": "ถ้าคุณชอบช่วยเหลือผู้อื่น มีใจบริการ และทำงานร่วมกับคนหลากหลาย ด้านนี้เหมาะกับคุณ"
+
+  };
+
+  async function fetchCases() {
+    const res = await fetch('/cases');
+    const data = await res.json();
+    casesData = data;
+    
+    const caseList = document.getElementById('caseList');
+    caseList.innerHTML = '';
+    data.cases.forEach((c) => {
+      const card = document.createElement('div');
+      card.className = 'case-card';
+      card.tabIndex = 0;
+      card.textContent = c;
+      card.onclick = () => selectCase(c, card);
+      card.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectCase(c, card);
+        }
+      };
+      caseList.appendChild(card);
+    });
+    startMascotBubble();
+  }
+
+  function selectCase(c, cardElement) {
+    currentCase = c;
+    currentBranchIndex = null;
+    document.querySelectorAll('.case-card').forEach(el => el.classList.remove('active'));
+    cardElement.classList.add('active');
+
+    const descDiv = document.getElementById('caseDescription');
+    descDiv.style.opacity = 0;
+    setTimeout(() => {
+      descDiv.textContent = caseDescriptions[c] || "ไม่มีคำอธิบายสำหรับความชอบนี้";
+      descDiv.style.opacity = 1;
+    }, 200);
+
+    document.getElementById('caseNextBtn').style.display = 'inline-block';
+  }
+
+  async function startCase() {
+
+    document.getElementById('progress-container').style.display = 'none';
+
+    if (!currentCase) return alert("กรุณาเลือกความชอบก่อนเริ่ม");
+    // เรียก API /start เพื่อดึงข้อมูล branches หรือ first_question
+    const res = await fetch('/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({case: currentCase})
+    });
+    const data = await res.json();
+
+    if (data.branches && data.branches.length > 0) {
+      // แสดงหน้าหัวข้อย่อย
+      showBranchSelection(data.branches);
+    } else if (data.first_question) {
+      // ข้าม branch ไปแสดงคำถามเลย
+showQuestionArea(data.first_question);
+questionQueue = [];
+showQuestion(data.first_question);
+    } else {
+      alert("ข้อมูลความชอบนี้ยังไม่มีคำถามในระบบ");
+    }
+  }
+
+  function showBranchSelection(branches) {
+    document.getElementById('case-selection').style.display = 'none';
+  document.querySelector('.mascot-case').style.display = 'none';
+    const branchSection = document.getElementById('branch-selection');
+    branchSection.style.display = 'flex';
+    document.getElementById('case-selection').style.display = 'none';
+  document.querySelector('.mascot-case').style.display = 'none';
+  stopMascotBubble();
+
+    const branchList = document.getElementById('branchList');
+    branchList.innerHTML = '';
+    branches.forEach((b, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'option-btn';
+      btn.textContent = b;
+      btn.tabIndex = 0;
+      btn.onclick = () => selectBranch(i, btn);
+      btn.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectBranch(i, btn);
+        }
+      };
+      branchList.appendChild(btn);
+    });
+  }
+
+  async function selectBranch(idx, btnElement) {
+    currentBranchIndex = idx;
+    document.querySelectorAll('#branchList .option-btn').forEach(el => el.classList.remove('active'));
+    btnElement.classList.add('active');
+
+    // เรียก API /select_branch
+    const res = await fetch('/select_branch', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({case: currentCase, branch_index: idx})
+    });
+    const data = await res.json();
+
+    if (data.first_question) {
+      // ซ่อน branch selection, แสดงคำถาม
+      document.getElementById('branch-selection').style.display = 'none';
+showQuestionArea(data.first_question);
+questionQueue = [];
+showQuestion(data.first_question);
+    } else {
+      alert("ข้อมูลหัวข้อย่อยนี้ยังไม่มีคำถามในระบบ");
+    }
+  }
+
+  function countQuestions(question) {
+  if (!question) return 0;
+  let count = 1; // ตัวเอง
+  if (question.options) {
+    for (const opt of question.options) {
+      if (opt.next_question) {
+        count += countQuestions(opt.next_question);
+      }
+      if (opt.sub_questions) {
+        for (const sub of opt.sub_questions) {
+          count += countQuestions(sub);
+        }
+      }
+      if (opt.options) {
+        // เผื่อมี options ซ้อนใน option (บาง flow)
+        for (const sub of opt.options) {
+          if (sub.next_question) count += countQuestions(sub.next_question);
+        }
+      }
+    }
+  }
+  if (question.next_questions) {
+    for (const nq of question.next_questions) {
+      count += countQuestions(nq);
+    }
+  }
+  return count;
+}
+
+  function showQuestionArea(firstQuestion = null) {
+    
+
+  document.getElementById('case-selection').style.display = 'none';
+  document.querySelector('.mascot-case').style.display = 'none';
+  stopMascotBubble();
+  document.getElementById('case-selection').style.display = 'none';
+  document.querySelector('.mascot-case').style.display = 'none';
+  document.getElementById('branch-selection').style.display = 'none';
+  document.getElementById('question-area').style.display = 'flex';
+  document.getElementById('progress-container').style.display = 'block';
+  document.getElementById('result').textContent = 'none';
+  document.getElementById('note').textContent = 'none';
+  totalQuestionsAsked = 0;
+
+  stopMascotBubble();
+
+  // ถ้ามี firstQuestion ให้ set maxQuestions จากการนับจริง
+  if (firstQuestion) {
+    maxQuestions = countQuestions(firstQuestion);
+  } else {
+    maxQuestions = (questionQueue?.length || 0) + 1;
+  }
+  updateProgress(0);
+}
+  // ...existing code...
+
+function typeWriterEffect(element, text, speed = 28) {
+  element.textContent = "";
+  let i = 0;
+  // เพิ่มคลาสหมุนให้มาสคอต
+  const mascot = document.querySelector('.bot-avatar');
+  if (mascot) mascot.classList.add('typing');
+  function type() {
+    if (i < text.length) {
+      element.textContent += text.charAt(i);
+      i++;
+      setTimeout(type, speed);
+    } else {
+      // หยุดหมุนเมื่อพิมพ์จบ
+      if (mascot) mascot.classList.remove('typing');
+    }
+  }
+  type();
+}
+
+function showQuestion(question) {
+  currentQuestion = question;
+  totalQuestionsAsked++;
+  updateProgress(totalQuestionsAsked);
+
+  const qText = document.getElementById('question-text');
+  typeWriterEffect(qText, question.question || "");
+
+  const optionsDiv = document.getElementById('options');
+  optionsDiv.innerHTML = '';
+
+  document.getElementById('result').style.display = 'none'; 
+  document.getElementById('note').style.display = 'none'; 
+
+document.getElementById('bot-question-box').style.display = 'flex';
+  document.getElementById('restartBtn').style.display = 'none';
+  document.getElementById('shareBtn').style.display='none';
+
+  question.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.textContent = opt.option;
+    btn.onclick = () => {
+      btn.classList.add('active');
+      Array.from(optionsDiv.children).forEach(b => b.disabled = true);
+      selectOption(idx);
+    };
+    optionsDiv.appendChild(btn);
+  });
+
+  // แสดงปุ่มย้อนกลับถ้ามีประวัติ
+
+}
+
+// ...existing code...
+ async function selectOption(idx) {
+  const res = await fetch('/next_question', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ question: currentQuestion, selected_option_index: idx })
+  });
+  const data = await res.json();
+
+  document.getElementById('note').textContent = data.note || '';
+
+  if (data.finished) {
+
+    launchFireworks();
+    launchFireworks();
+    launchFireworks();
+    launchFireworks();
+
+    const resultDiv = document.getElementById('result');
+    const shareBtn = document.getElementById('shareBtn');
+    document.getElementById('bot-question-box').style.display = 'none'; // ซ่อนกล่องบอทเมื่อสรุปผล
+
+    if (data.result?.length) {
+let resultTitle = `<div class="result-title">ผลลัพธ์สำหรับคุณ</div>`;
+resultDiv.innerHTML = resultTitle + data.result.map(item => `
+  <div class="result-card">${item}</div>
+`).join('');
+
+      shareBtn.style.display = 'inline-block';
+    } else {
+      resultDiv.innerHTML = " ขอบคุณที่ใช้บริการ";
+      shareBtn.style.display = 'none';
+    }
+
+    resultDiv.style.display = 'block';
+    document.getElementById('note').style.display = 'block';
+    document.getElementById('question-text').textContent = "";
+    document.getElementById('options').innerHTML = "";
+    document.getElementById('restartBtn').style.display = 'inline-block';
+    document.getElementById('progress-container').style.display = 'none';
+  } else if (data.next_questions?.length > 0) {
+    questionQueue = data.next_questions.concat(questionQueue);
+    // maxQuestions += data.next_questions.length;  // <-- ลบบรรทัดนี้ออก
+    const nextQ = questionQueue.shift();
+    showQuestion(nextQ);
+  } else if (questionQueue.length > 0) {
+    const nextQ = questionQueue.shift();
+    showQuestion(nextQ);
+  }  else {
+    document.getElementById('result').textContent = "ไม่พบคำถามถัดไป";
+    document.getElementById('restartBtn').style.display = 'inline-block';
+    document.getElementById('progress-container').style.display = 'none';
+    
+    
+  }
+}
+
+  function restart() {
+    // เริ่มต้นกลับไปเลือกเคสใหม่
+    currentCase = null;
+    currentBranchIndex = null;
+    questionQueue = [];
+    currentQuestion = null;
+    totalQuestionsAsked = 0;
+    maxQuestions = 1;
+
+    document.getElementById('caseNextBtn').style.display = 'none';
+    document.getElementById('branch-selection').style.display = 'none';
+    document.getElementById('question-area').style.display = 'none';
+    document.getElementById('progress-container').style.display = 'none';
+    document.getElementById('result').textContent = '';
+    document.getElementById('note').textContent = '';
+    document.getElementById('question-text').textContent = '';
+    document.getElementById('options').innerHTML = '';
+    document.getElementById('restartBtn').style.display = 'none';
+    document.getElementById('case-selection').style.display = 'flex';
+    document.querySelector('.mascot-case').style.display = 'block';
+     document.getElementById('case-selection').style.display = 'flex';
+  document.querySelector('.mascot-case').style.display = 'block';
+  startMascotBubble(); 
+
+    document.querySelectorAll('.case-card').forEach(el => el.classList.remove('active'));
+
+    const descDiv = document.getElementById('caseDescription');
+    descDiv.style.opacity = 0;
+    setTimeout(() => {
+      descDiv.textContent = "กรุณาเลือกความชอบเพื่อดูคำแนะนำ";
+      descDiv.style.opacity = 1;
+    }, 200);
+
+    document.getElementById('case-selection').style.display = 'flex';
+  }
+  function shareResult() {
+  const text = document.getElementById('result').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    alert(" คัดลอกผลลัพธ์ไปยังคลิปบอร์ดแล้ว!");
+  });
+}
+
+
+function updateProgress(count) {
+  const bar = document.getElementById('progress-bar');
+  // ใช้ maxQuestions ที่กำหนดไว้
+  let percent = maxQuestions > 0 ? Math.min(100, (count / maxQuestions) * 100) : 0;
+  bar.style.width = percent + '%';
+}
+
+ window.addEventListener("DOMContentLoaded", () => {
+  const overlay = document.getElementById("intro-overlay");
+  const content = document.querySelector(".intro-content");
+
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement("div");
+    p.classList.add("particle");
+    p.style.left = `${Math.random() * 100}%`;
+    p.style.bottom = `-20px`;
+    p.style.animationDelay = `${Math.random() * 5}s`;
+    p.style.animationDuration = `${3 + Math.random() * 2}s`;
+    overlay.appendChild(p);
+  }
+
+  setTimeout(() => {
+    content.classList.add("fade-out");
+    setTimeout(() => {
+      overlay.style.display = "none";
+    }, 1000);
+  }, 4000); // ระยะเวลาโชว์ intro
+});
+
+
+ function launchFireworks() {
+  const container = document.getElementById("fireworks-container");
+
+  for (let i = 0; i < 10; i++) {
+    setTimeout(() => {
+      const firework = document.createElement("div");
+      firework.className = "firework";
+
+      const x = Math.random() * window.innerWidth;
+      const y = window.innerHeight;
+
+      firework.style.left = `${x}px`;
+      firework.style.bottom = `0px`;
+
+      container.appendChild(firework);
+
+      // เมื่อพุ่งเสร็จ ให้แตก
+      setTimeout(() => {
+        firework.remove();
+        createExplosion(x, window.innerHeight * 0.4 + Math.random() * 0.3 * window.innerHeight);
+      }, 800);
+    }, i * 300); // ยิงพลุห่างกันทุก 300ms
+  }
+}
+
+function createExplosion(x, y) {
+  const container = document.getElementById("fireworks-container");
+  const colors = ["#ff3838", "#34ebcc", "#ffea00", "#ff00c8", "#00e1ff", "#a9ff00"];
+
+  const particles = 80;
+  for (let i = 0; i < particles; i++) {
+    const particle = document.createElement("div");
+    particle.className = "particle";
+
+    const angle = (Math.PI * 2 * i) / particles;
+    const radius = 120 + Math.random() * 40;
+    const dx = Math.cos(angle) * radius;
+    const dy = Math.sin(angle) * radius;
+
+    particle.style.left = `${x}px`;
+    particle.style.top = `${y}px`;
+    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.setProperty("--dx", `${dx}px`);
+    particle.style.setProperty("--dy", `${dy}px`);
+
+    container.appendChild(particle);
+
+    setTimeout(() => {
+      particle.remove();
+    }, 1500);
+  }
+}
+
+
+
+const mascotBubble = document.getElementById('mascot-bubble');
+const mascotBubbleText = document.getElementById('mascot-bubble-text');
+const mascotMessages = [
+  "เลือกความชอบของคุณได้เลยนะครับ",
+  "ถ้าไม่แน่ใจ ลองกดเริ่มได้เลย !",
+  "พร้อมแนะนำสายการเรียนให้คุณแล้ว"
+];
+let mascotBubbleTimeout = null;
+let mascotMsgIndex = 0;
+
+function showMascotBubble(msg) {
+  mascotBubbleText.textContent = msg;
+  mascotBubble.style.display = 'block';
+  mascotBubble.classList.add('active');
+  // ซ่อนหลัง 5.5 วิ (แต่ไม่ปิด display ทันที)
+  mascotBubbleTimeout = setTimeout(() => {
+    mascotBubble.classList.remove('active');
+    mascotBubbleTimeout = setTimeout(() => {
+      mascotBubble.style.display = 'none';
+      // เรียกวนรอบใหม่หลังปิด bubble แล้ว
+      mascotMsgIndex = (mascotMsgIndex + 1) % mascotMessages.length;
+      showMascotBubble(mascotMessages[mascotMsgIndex]);
+    }, 2000); // fade out 0.5 วิ
+  }, 5000); // แสดงข้อความ 5.5 วิ
+}
+
+function startMascotBubble() {
+  stopMascotBubble(); // ป้องกันซ้อน
+  mascotMsgIndex = 0;
+  showMascotBubble(mascotMessages[mascotMsgIndex]);
+}
+
+function stopMascotBubble() {
+  if (mascotBubbleTimeout) {
+    clearTimeout(mascotBubbleTimeout);
+    mascotBubbleTimeout = null;
+  }
+  mascotBubble.classList.remove('active');
+  mascotBubble.style.display = 'none';
+}
+
+function scrollCaseList(direction) {
+  const list = document.getElementById('caseList');
+  const scrollAmount = 120; // px ต่อครั้ง
+  list.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+}
+
+
+
+function scrollBranchList(direction) {
+  const list = document.getElementById('branchList');
+  const scrollAmount = 120;
+  list.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+}
+
+
+
+
+  window.onload = fetchCases;
+</script>
+</body>
+</html>
